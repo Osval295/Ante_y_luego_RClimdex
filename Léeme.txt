@@ -1,0 +1,27 @@
+Título: Procesa la entrada y salida de indicadores climáticos para el perfeccionamiento de los servicios en lenguaje Python.
+Contiene 2 módulos en la misma interfaz gráfica.
+
+Módulo 1: (Preparando los datos para el procesamiento en el RClimdex)
+	Entrada:
+		Una ruta de la carpeta que tenga los ficheros excels TRABAJO OPERATIVO
+	Procesamiento:
+		A partir de la ruta indicada detecta los ficheros con formato excel que en su nombre contenga la frase "TRABAJO OPERATIVO" y su extensión sea un formato excel.
+		En cada uno de los ficheros detectados recibe los datos de una hoja llamada "Datos Diarios". Revisa cada una de las filas y desecha aquellas que el valor de la columna "Ano" no es un número. (con excepción de la fila de encabezamiento)
+		La tabla finalmente está lista para la salida.
+		
+	Salida:
+		La salida se genera en la misma ruta que recibe en la entrada.
+		Ficheros txt uno para cada estación con los datos de diarios de "r 24h", "T max", "T min" sólo los valores sin los encabezados (esa es la entrada que recibe el RClimdex)
+		Un fichero llamado "resumen_Datos_Diarios.xlsx" que contiene 1 hoja resumen de todos los datos y una hoja para cada estación con los datos de los txts de salida con sus encabezados de filas y columnas.
+
+Módulo 2: (Análisis de datos post-RClimdex)
+	Entrada:
+		Una ruta con los ficheros de salida del RClimdex.
+		Un valor de mes (0 para el anual y del 1 al 12 para los meses) y un valor de año.
+	Procesamiento:
+		Para cada fichero csv los pasa a una tabla.
+		Las celdas con valores 0 y -99.9 son considerados como NaN(no es un número) (un valor no válido)
+		En cada csv busca por la columna el mes indicado y por las filas el año indicado. El valor en la celda mes y año indicado es comparado con todos los valores de la columna mes indicado y aquellos que son encontrados en los extremos por ser mínimos o máximos son los que se darán en la salida.
+		Está puesto hasta un 3er valor de significación. Puede cambiarlo modificando el 3 en la línea 8 que dice "signification = 3".
+	Salida:
+		Una lista en pantalla de los descriptores y estaciones con los valores más significativos.
