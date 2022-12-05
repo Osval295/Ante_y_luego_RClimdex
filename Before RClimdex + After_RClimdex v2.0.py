@@ -1,15 +1,33 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from glob import glob
 import pandas as pd
 import os
 
+def guardar(df):
+    xlsx = filedialog.askdirectory(initialdir = os.getcwd(), title = "Guardar como") + '/SALIDA.xlsx'
+    df['valor'] = df['valor'].astype(float)
+    conjunto = list(set(df['Índice'].apply(lambda x: x.split('_')[0][4:-2])))
+    with pd.ExcelWriter(xlsx) as f:
+        df.to_excel(f, sheet_name='tabla', index=False)
+        for est in conjunto:
+            df_temporal = pd.DataFrame()
+            for file in df['Índice']:
+                if est == file.split('_')[0][4:-2]:
+                    new_df = pd.read_csv(file)
+                    if 'year' in df_temporal.columns:
+                        df_temporal = pd.concat([df_temporal, new_df.loc[:, mes].rename(file.split('_')[1].split('.')[0] + mes)],axis=1)
+                    else:
+                        df_temporal = pd.concat([df_temporal, new_df.loc[:,['year', mes]].rename(columns = {mes: file.split('_')[1].split('.')[0] + mes})],axis=1)
+            df_temporal.to_excel(f, sheet_name=est, index=False)
+    messagebox.showinfo(message=f"La salida se encuentra en\n{xlsx}", title="Resultado")
+            
 def cod_resumen(text):
-    global df,a,xlsm
     from datetime import datetime, timedelta
     dir_inicial = os.getcwd()
     os.chdir(text)
+    
     def conv_str(x):
         x = x.astype(int)
         x = x.astype(str)
@@ -58,42 +76,42 @@ def cod_resumen(text):
     df[['Ano', 'Mes', 'Dia', 'r 24h', 'T max', 'T min']].loc[78349,:].to_csv('78349.txt', sep='\t', index=False, header=False)
     messagebox.showinfo(message="Ejecución exitosa", title="Resultado")
     
-def cod_after_rclimdex(self,ADDRESS,mes, year):
-    
+def cod_after_rclimdex(self, ADDRESS, mes_text, year):
+    global mes
     text_salida = []
     self.text5=tk.Text(self.labelframe2)
-    self.text5.configure(height=10, width=50)
+    self.text5.configure(height=10, width=70)
     self.text5.grid(column=0, row=2, padx=4, pady=4)
     year = int(year)
     os.chdir(ADDRESS)
     csv = [ii for ii in glob('*.csv') if not ii.startswith('~$')]
     while True:
-        if mes in [str(ii) for ii in range(0,13)]:
-            if mes == '0':
+        if mes_text in [str(ii) for ii in range(0,13)]:
+            if mes_text == '0':
                 mes = ' annual'
-            if mes == '1':
+            if mes_text == '1':
                 mes = ' jan'
-            if mes == '2':
+            if mes_text == '2':
                 mes = ' feb'
-            if mes == '3':
+            if mes_text == '3':
                 mes = ' mar'
-            if mes == '4':
+            if mes_text == '4':
                 mes = ' apr'
-            if mes == '5':
+            if mes_text == '5':
                 mes = ' may'
-            if mes == '6':
+            if mes_text == '6':
                 mes = ' jun'
-            if mes == '7':
+            if mes_text == '7':
                 mes = ' jul'
-            if mes == '8':
+            if mes_text == '8':
                 mes = ' aug'
-            if mes == '9':
+            if mes_text == '9':
                 mes = ' sep'
-            if mes == '10':
+            if mes_text == '10':
                 mes = ' oct'
-            if mes == '11':
+            if mes_text == '11':
                 mes = ' nov'
-            if mes == '12':
+            if mes_text == '12':
                 mes = ' dec'
             break
         print('\nEntrada no válida. Escriba un número para indicar el mes\n')
@@ -118,9 +136,15 @@ def cod_after_rclimdex(self,ADDRESS,mes, year):
                 alto.append({item:'{} más alto'.format(str(orden.index(valor) + 1))})
                 continue
     df = pd.DataFrame(data=[ii.split('\t') for ii in text_salida], columns = ['Índice', 'orden', 'valor'])
-    df.set_index('Índice', inplace=True)
+##    df['Estación'] = df['Índice'].apply(lambda x: x.split('_')[0][4:-2])
+##    df['Variable'] = df['Índice'].apply(lambda x: x.split('_')[1].split('.')[0])
+##    df.pop('Índice')
+##    df = df.reindex(columns=['Estación', 'Variable', 'orden', 'valor'])
+##    df.set_index('Estación', inplace=True)
     self.text5.insert('end',df)
-    messagebox.showinfo(message="Ejecución exitosa", title="Resultado")
+    self.btn = ttk.Button(self.labelframe2, text='Guardar', comman = lambda: guardar(df))
+    self.btn.grid(column=1, row=2, padx=4, pady=4)
+    
     
 class Aplicacion:
     def __init__(self):
@@ -137,7 +161,7 @@ class Aplicacion:
         self.label1=ttk.Label(self.labelframe1, text="Inserte la ruta de los ficheros xlsm del trabajo operativo")
         self.label1.grid(column=0, row=0, padx=4, pady=4)
         self.text1=tk.Text(self.labelframe1)
-        self.text1.configure(height=2, width=50)
+        self.text1.configure(height=2, width=70)
         self.text1.grid(column=0, row=1, padx=4, pady=4)
         self.button1=ttk.Button(self.labelframe1, text = "Ejecutar", comman = lambda:cod_resumen(r'{}'.format(self.text1.get("1.0", 'end-1c'))))
         self.button1.grid(column = 1, row=1, padx=4, pady=4)
@@ -146,10 +170,10 @@ class Aplicacion:
         self.label1=ttk.Label(self.labelframe2, text="Inserte la ruta de salida de ficheros de RClimdex")
         self.label1.grid(column=0, row=0, padx=4, pady=4)
         self.text2=tk.Text(self.labelframe2)
-        self.text2.configure(height=2, width=50)
+        self.text2.configure(height=2, width=70)
         self.text2.grid(column=0, row=1, padx=4, pady=4)
         self.button1=ttk.Button(self.labelframe2, text = "Ejecutar", comman = lambda:cod_after_rclimdex(self,ADDRESS=self.text2.get('1.0', 'end-1c'),
-                                                                                                        mes=self.text3.get('1.0', 'end-1c'),
+                                                                                                        mes_text=self.text3.get('1.0', 'end-1c'),
                                                                                                         year=self.text4.get('1.0', 'end-1c')))
         self.button1.grid(column = 0, row=4, padx=4, pady=4)
         self.label2=ttk.Label(self.labelframe2, text="Inserte el mes:")
